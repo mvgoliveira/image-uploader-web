@@ -1,13 +1,14 @@
+import axios from 'axios';
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import Image from 'next/image'
 import { useEffect } from 'react';
 import {HiUpload} from "react-icons/hi"
 
-import {Card, Container} from "../styles/HomeStyle";
+import styles from "../styles/Home.module.scss";
 
 const Home: NextPage = () => {  
-  function handleUploadImage() {
+  function handleUploadImages() {
     const input = document.getElementById("imageInput"); 
     
     if (input instanceof HTMLInputElement) {
@@ -15,22 +16,42 @@ const Home: NextPage = () => {
     }
   }
 
-  useEffect(() => {
-    const input = document.getElementById("imageInput"); 
+  async function handleSubmitImages() {    
+    const formData = new FormData();
+    const imageInput = document.getElementById("imageInput"); 
 
-    input?.addEventListener('change', () => {
-      if (input instanceof HTMLInputElement && input.files && input.files?.length !== 0) {
+    if (imageInput instanceof HTMLInputElement && imageInput.files && imageInput.files.length !== 0) {
+
+      for (let i = 0; i < imageInput.files.length ; i++) {
+        formData.append("pictures", imageInput.files[i]);
+      }
+
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/images`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      console.log(response.data.imagesURL);
+    }
+  }
+
+  useEffect(() => {
+    const imageInput = document.getElementById("imageInput"); 
+
+    imageInput?.addEventListener('change', () => {
+      if (imageInput instanceof HTMLInputElement && imageInput.files && imageInput.files.length !== 0) {
         const imgContainer = document.getElementById('imageContainer');
 
         while (imgContainer && imgContainer.lastChild) {
           imgContainer.removeChild(imgContainer.lastChild);
         }
 
-        for (let i = 0; i < input.files.length; i++) {
+        for (let i = 0; i < imageInput.files.length; i++) {
           let img = document.createElement('img');
 
           if (img instanceof HTMLImageElement) {
-            img.src = URL.createObjectURL(input.files[i]);
+            img.src = URL.createObjectURL(imageInput.files[i]);
             imgContainer?.appendChild(img);
           }
           
@@ -41,7 +62,9 @@ const Home: NextPage = () => {
   }, [])
 
   return (
-    <Container>
+    <div className={styles.Container}>
+      <section></section>
+
       <Head>
         <title>Image Uploader</title>
         <meta name="description" content="A simple image uploader" />
@@ -49,22 +72,23 @@ const Home: NextPage = () => {
       </Head>
 
       <main>
-        <Card>
+        <div className={styles.Card}>
           <h1>Image Uploader</h1>
-          <div className='file-upload'>
+
+          <div className={styles.fileUpload}>
             <input type="file" id="imageInput" name="imageInput" accept="image/png, image/jpeg, image/jpg" multiple/>
-            <button type='button' onClick={handleUploadImage}><HiUpload size={35}/></button>
-            <button type='button' className='submitButton'>Enviar</button>
+            <button type='button' onClick={handleUploadImages}><HiUpload size={35}/></button>
+            <button type='button' onClick={handleSubmitImages} className={styles.submitButton}>Enviar</button>
           </div>
 
 
-          <div id='imageContainer'>
+          <div id="imageContainer" className={styles.imageContainer}>
 
           </div>
 
-        </Card>
+        </div>
       </main>
-    </Container>
+    </div>
   )
 }
 
