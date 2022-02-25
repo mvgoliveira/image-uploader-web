@@ -19,6 +19,7 @@ const Home: NextPage = () => {
   async function handleSubmitImages() {    
     const formData = new FormData();
     const imageInput = document.getElementById("imageInput"); 
+    const imgContainer = document.getElementById('imageContainer');
 
     if (imageInput instanceof HTMLInputElement && imageInput.files && imageInput.files.length !== 0) {
 
@@ -40,6 +41,11 @@ const Home: NextPage = () => {
         })
         
         console.log(response.data.imagesURL);
+
+        while (imgContainer && imgContainer.lastChild) {
+          imgContainer.removeChild(imgContainer.lastChild);
+        }
+
       } catch (err: AxiosError | any) {}
 
     }
