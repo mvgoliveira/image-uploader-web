@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import Image from 'next/image'
 import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 import {HiUpload} from "react-icons/hi"
 
 import styles from "../styles/Home.module.scss";
@@ -26,13 +26,22 @@ const Home: NextPage = () => {
         formData.append("pictures", imageInput.files[i]);
       }
 
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/images`, formData, {
+      const promise = axios.post(`${process.env.NEXT_PUBLIC_API_URL}/images`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      console.log(response.data.imagesURL);
+      try {
+        const response = await toast.promise(promise, {
+          loading: 'Uploading...',
+          success: 'Upload successful!',
+          error: 'Upload Failed'
+        })
+        
+        console.log(response.data.imagesURL);
+      } catch (err: AxiosError | any) {}
+
     }
   }
 
@@ -76,16 +85,26 @@ const Home: NextPage = () => {
           <h1>Image Uploader</h1>
 
           <div className={styles.fileUpload}>
-            <input type="file" id="imageInput" name="imageInput" accept="image/png, image/jpeg, image/jpg" multiple/>
+            <input 
+              type="file" 
+              id="imageInput" 
+              name="imageInput" 
+              accept="image/png, image/jpeg, image/jpg" 
+              multiple
+            />
+
             <button type='button' onClick={handleUploadImages}><HiUpload size={35}/></button>
-            <button type='button' onClick={handleSubmitImages} className={styles.submitButton}>Enviar</button>
+            
+            <button 
+              type='button' 
+              onClick={handleSubmitImages} 
+              className={styles.submitButton}
+            >
+              Enviar 
+            </button>
           </div>
 
-
-          <div id="imageContainer" className={styles.imageContainer}>
-
-          </div>
-
+          <div id="imageContainer" className={styles.imageContainer}></div>
         </div>
       </main>
     </div>
