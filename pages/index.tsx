@@ -35,6 +35,7 @@ const Home: NextPage = () => {
           imageContainer.id = `image-${i}`;
 
           let deleteImageButton = document.createElement('article');
+          deleteImageButton.innerHTML = "Delete";
 
           let image = document.createElement('img');
           imageContainer.appendChild(image);
@@ -67,26 +68,36 @@ const Home: NextPage = () => {
         }
       }
 
-      const promise = axios.post(`${process.env.NEXT_PUBLIC_API_URL}/images`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      var res = Array.from(formData.entries(), ([key, prop]) => (
+        {[key]: {
+          "ContentLength": 
+          typeof prop === "string" 
+          ? prop.length 
+          : prop.size
         }
-      });
+      }));
 
-      try {
-        const response = await toast.promise(promise, {
-          loading: 'Uploading...',
-          success: 'Upload successful!',
-          error: 'Upload Failed'
-        })
-        
-        console.log(response.data.imagesURL);
+      if (res.length > 0) {
+        const promise = axios.post(`${process.env.NEXT_PUBLIC_API_URL}/images`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
 
-        while (imagesContainer && imagesContainer.lastChild) {
-          imagesContainer.removeChild(imagesContainer.lastChild);
-        }
-      } catch (err: AxiosError | any) {}
-
+        try {
+          const response = await toast.promise(promise, {
+            loading: 'Uploading...',
+            success: 'Upload successful!',
+            error: 'Upload Failed'
+          })
+          
+          console.log(response.data.imagesURL);
+  
+          while (imagesContainer && imagesContainer.lastChild) {
+            imagesContainer.removeChild(imagesContainer.lastChild);
+          }
+        } catch (err: AxiosError | any) {}
+      }
     }
   }
 
