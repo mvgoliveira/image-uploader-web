@@ -1,14 +1,15 @@
 import axios, { AxiosError } from 'axios';
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import {HiUpload} from "react-icons/hi"
 
 import styles from "../styles/Home.module.scss";
 
 const Home: NextPage = () => {  
-  function handleUploadImages() {
+  let selectedImages: File[] | null | (File | "")[] = null;
+
+  function handleOpenImagesSelection() {
     const input = document.getElementById("imageInput"); 
     
     if (input instanceof HTMLInputElement) {
@@ -16,15 +17,54 @@ const Home: NextPage = () => {
     }
   }
 
+  function handleChangeSelectedImages() {
+    const imageInput = document.getElementById("imageInput"); 
+    const imagesContainer = document.getElementById('imagesContainer');
+
+    
+    if (imageInput instanceof HTMLInputElement) {
+      const selectedImageArray = [];
+
+      if (imageInput.files && imageInput.files.length > 0) {
+        while (imagesContainer && imagesContainer.lastChild) {
+          imagesContainer.removeChild(imagesContainer.lastChild);
+        }
+        
+        for (let i = 0; i < imageInput.files.length; i++) {
+          let imageContainer = document.createElement('section');
+          imageContainer.id = `image-${i}`;
+
+          let deleteImageButton = document.createElement('article');
+
+          let image = document.createElement('img');
+          imageContainer.appendChild(image);
+          imageContainer.appendChild(deleteImageButton);
+          imageContainer.onclick = () => removeImage(i);
+  
+          if (image instanceof HTMLImageElement && imagesContainer) {
+            image.src = URL.createObjectURL(imageInput.files[i]);
+            imagesContainer.appendChild(imageContainer);
+          }
+
+          selectedImageArray.push(imageInput.files[i]);
+        }
+      }
+      
+      selectedImages = selectedImageArray;
+      imageInput.value = "";
+    }
+  }
+
   async function handleSubmitImages() {    
     const formData = new FormData();
-    const imageInput = document.getElementById("imageInput"); 
-    const imgContainer = document.getElementById('imageContainer');
+    const imagesContainer = document.getElementById('imagesContainer');
 
-    if (imageInput instanceof HTMLInputElement && imageInput.files && imageInput.files.length !== 0) {
+    if (selectedImages) {
 
-      for (let i = 0; i < imageInput.files.length ; i++) {
-        formData.append("pictures", imageInput.files[i]);
+      for (let i = 0; i < selectedImages.length ; i++) {
+        if (selectedImages[i] !== "") {
+          formData.append("pictures", selectedImages[i]);
+        }
       }
 
       const promise = axios.post(`${process.env.NEXT_PUBLIC_API_URL}/images`, formData, {
@@ -42,39 +82,34 @@ const Home: NextPage = () => {
         
         console.log(response.data.imagesURL);
 
-        while (imgContainer && imgContainer.lastChild) {
-          imgContainer.removeChild(imgContainer.lastChild);
+        while (imagesContainer && imagesContainer.lastChild) {
+          imagesContainer.removeChild(imagesContainer.lastChild);
         }
-
       } catch (err: AxiosError | any) {}
 
     }
   }
 
-  useEffect(() => {
-    const imageInput = document.getElementById("imageInput"); 
+  async function removeImage(idx: number) {
+    const image = document.getElementById(`image-${idx}`); 
 
-    imageInput?.addEventListener('change', () => {
-      if (imageInput instanceof HTMLInputElement && imageInput.files && imageInput.files.length !== 0) {
-        const imgContainer = document.getElementById('imageContainer');
+    if (image instanceof HTMLElement && image.parentNode) {
+      image.parentNode.removeChild(image);
+    }
 
-        while (imgContainer && imgContainer.lastChild) {
-          imgContainer.removeChild(imgContainer.lastChild);
+    if (selectedImages !== null && selectedImages.length > 0) {
+      
+      selectedImages = selectedImages.map((image: File | "", index: number ) => {
+        if (index != idx) {
+          return image
+        } else {
+          return "";
         }
-
-        for (let i = 0; i < imageInput.files.length; i++) {
-          let img = document.createElement('img');
-
-          if (img instanceof HTMLImageElement) {
-            img.src = URL.createObjectURL(imageInput.files[i]);
-            imgContainer?.appendChild(img);
-          }
-          
-        }
-
-      }
-    })
-  }, [])
+      });
+      // selectedImages = selectedImages.filter((image: File, index: number ) => index !== idx);
+      // console.log(selectedImages);
+    }
+  } 
 
   return (
     <div className={styles.Container}>
@@ -97,9 +132,10 @@ const Home: NextPage = () => {
               name="imageInput" 
               accept="image/png, image/jpeg, image/jpg" 
               multiple
+              onChange={handleChangeSelectedImages}
             />
 
-            <button type='button' onClick={handleUploadImages}><HiUpload size={35}/></button>
+            <button type='button' onClick={handleOpenImagesSelection}><HiUpload size={35}/></button>
             
             <button 
               type='button' 
@@ -110,7 +146,7 @@ const Home: NextPage = () => {
             </button>
           </div>
 
-          <div id="imageContainer" className={styles.imageContainer}></div>
+          <div id="imagesContainer" className={styles.imageContainer}></div>
         </div>
       </main>
     </div>
